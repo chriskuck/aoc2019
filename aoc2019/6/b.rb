@@ -5,7 +5,6 @@ class Graph
   end
 
   def add_edge(a,b)
-    puts "#{a},#{b}"
     add_node(a)
     add_node(b)
     @nodes[a][:child_nodes] << b
@@ -18,6 +17,10 @@ class Graph
       @nodes[key][:child_nodes] = []
       @nodes[key][:parent_nodes] = []
     end
+  end
+
+  def all_children(key)
+    return @nodes[key][:child_nodes].concat(@nodes[key][:parent_nodes])
   end
 
   def traverse_length(key)
@@ -37,6 +40,31 @@ class Graph
     sum
   end
 
+  def inner_find_path(root, to, visited)
+    #for a moment forget about the DAG part of this
+    all_children(root).each do |c|
+
+      return [c] if c == to
+
+      if !visited.include? c
+        visited << c
+        path = inner_find_path(c, to, visited)
+        if !path.nil?
+          path << c
+          return path
+        end
+      end
+    end
+    return nil
+  end
+
+  def find_path(root, to)
+    path = inner_find_path(root, to, [])
+    if !path.nil?
+      path << root
+    end
+    puts path.length - 3
+  end
 end
 
 class Parser
