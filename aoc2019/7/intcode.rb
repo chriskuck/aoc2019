@@ -65,8 +65,6 @@ class Program
 
   def halt()
     puts "HALTING"
-    @in_stream.close()
-    @out_stream.close()
     @halted = true
   end
 
@@ -135,10 +133,10 @@ class Program
       end
   end
 
-  def read_input(value)
+  def read_input
     val = ""
     while
-      c = in_stream.getc
+      c = @in_stream.getc
       break if c == ',' || c == '\n'
       val << c
     end
@@ -146,7 +144,7 @@ class Program
   end
 
   def write_output(value)
-    out_stream.write("#{value},")
+    @out_stream.puts("#{value}")
   end
 end
 
