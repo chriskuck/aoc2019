@@ -1,4 +1,4 @@
-require "./b"
+require "./intcode"
 
 exit(1) unless !ARGV[0].nil? && File.exist?(ARGV[0])
 program = read_program(ARGV[0])
