@@ -2,7 +2,7 @@ require 'IO/console'
 
 class Program
   def initialize(program)
-    @program = program
+    @program = program.split(',').map(&:to_i)
     @halted = false
     @counter = 0
   end
@@ -141,17 +141,19 @@ class Program
     val = ""
     while
       c = @in_stream.getc
-      break if c == ',' || c == '\n'
+      break if c == ',' || c == '\n' || c == nil
+      puts "READ #{c}"
       val << c
     end
+    puts "RETURNING: #{val}"
     return val.to_i
   end
 
   def write_output(value)
-    @out_stream.puts("#{value}")
+    @out_stream.write("#{value},")
   end
 end
 
 def read_program(filename)
-  File.read(filename).split(',').map(&:to_i)
+  File.read(filename)
 end
