@@ -1,12 +1,12 @@
 require 'IO/console'
 
 class Program
-  def initialize(program, in_stream = nil, out_stream = nil)
+  def initialize(program)
     @program = program
     @halted = false
     @counter = 0
-    @in_stream = in_stream || $stdin
-    @out_stream = out_stream || $stdout
+    @in_stream = nil
+    @out_stream = nil
   end
 
   def step
@@ -15,11 +15,17 @@ class Program
     @counter += incr
   end
 
-  def process
-    while !@halted && peek_op do
+  def process(input, output)
+    @waiting = false
+    @in_stream = input
+    @out_stream = output
+    while !@halted && !@waiting && peek_op do
       incr = process_op
       @counter += incr
     end
+    return 0 if @halted
+    return 1 if @waiting
+    return 2
   end
 
   def []=(*args)
@@ -64,7 +70,7 @@ class Program
   end
 
   def halt()
-    puts "HALTING"
+    $stderr.write("HALTING\n")
     @halted = true
   end
 
@@ -96,7 +102,12 @@ class Program
         return 4
       when 3
         halt() if modes[0] != 0
-        @program[@program[@counter+1]] = read_input()
+        input = read_input()
+        if input.nil?
+          @waiting = true
+          return 0
+        end
+        @program[@program[@counter+1]] = input
         return 2
       when 4
         write_output(lookup(modes[0], @program[@counter+1]))
@@ -134,17 +145,22 @@ class Program
   end
 
   def read_input
+    return nil if @in_stream.eof?
+    fetch_word
+  end
+
+  def fetch_word
     val = ""
-    while
-      c = @in_stream.getc
-      break if c == ',' || c == '\n'
+    c = @in_stream.getc
+    while c != ',' && c != '\n' && c != nil
       val << c
+      c = @in_stream.getc
     end
-    return val.to_i
+    val.to_i
   end
 
   def write_output(value)
-    @out_stream.puts("#{value}")
+    @out_stream.write("#{value},")
   end
 end
 
