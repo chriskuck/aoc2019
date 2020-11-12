@@ -110,7 +110,6 @@ class Machine
     # ADD: 1, *X, *Y, *(X+Y)
     when 1
       halt if modes[2] != 0
-      binding.pry
       @program[@program[@counter + 3]] = lookup(modes[0], @program[@counter + 1]) + lookup(modes[1], @program[@counter + 2])
       return 4
 
