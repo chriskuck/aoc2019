@@ -3,12 +3,12 @@
 class Machine
 
   def initialize(program_text_in)
-    @program = program_text_in.split(',').map(&:to_i)
+    @memory = Memory.new(program_text_in.split(',').map(&:to_i))
+
     @halted = false
     @counter = 0
     @in_stream = nil
     @out_stream = nil
-    @offset = 0
   end
 
   def step
@@ -31,17 +31,17 @@ class Machine
     return 2
   end
 
-  def []=(*args)
-    @program[args[0]] = args[1]
-  end
-
-  def [](*args)
-    @program[args[0]]
-  end
-
-  def program_text
-    @program.join(",")
-  end
+#  def []=(*args)
+#    @program[args[0]] = args[1]
+#  end
+#
+#  def [](*args)
+#    @program[args[0]]
+#  end
+#
+#  def program_text
+#    @program.join(",")
+#  end
 
   private
 
@@ -53,13 +53,6 @@ class Machine
   def catch_fire(error = nil)
     $stderr.write("ERROR: #{error}")
     throw error
-  end
-
-  # translation
-  def lookup(mode, val)
-    return @program[val] if mode.zero?
-    return val if mode == 1
-    return @program[val + @offset] if mode == 2
   end
 
   def op_length(code)
@@ -92,10 +85,8 @@ class Machine
   # TODO: should this be a peek or some other type of method to determine all data about an instruction
   def peek_op
     c = @counter
-    catch_fire if c > @program.size
-    mode_op_code = @program[c]
+    mode_op_code = @memory.lookup(c)
     code = mode_op_code % 100
-    catch_fire if op_length(code) + c > @program.size
     modes = (mode_op_code / 100).to_s.rjust(op_length(code) - 1, '0').chars.reverse.map(&:to_i)
     [code, modes]
   end
@@ -108,13 +99,15 @@ class Machine
     # ADD: 1, *X, *Y, *(X+Y)
     when 1
       halt if modes[2] != 0
-      @program[@program[@counter + 3]] = lookup(modes[0], @program[@counter + 1]) + lookup(modes[1], @program[@counter + 2])
+      result = @memory.lookup(@counter + 1, modes[0]) + @memory.lookup(@counter + 2, modes[1])
+      @memory.write(@memory.lookup(@counter + 3), result)
       return 4
 
     # MULT: 2, *X, *Y, *(X+Y)
     when 2
       halt if modes[2] != 0
-      @program[@program[@counter + 3]] = lookup(modes[0], @program[@counter + 1]) * lookup(modes[1], @program[@counter + 2])
+      result = @memory.lookup(@counter + 1, modes[0]) * @memory.lookup(@counter + 2, modes[1])
+      @memory.write(@memory.lookup(@counter + 3), result)
       return 4
 
     # INPUT: 3, ADDR
@@ -125,18 +118,18 @@ class Machine
         @waiting = true
         return 0
       end
-      @program[@program[@counter + 1]] = input
+      @memory.write(@memory.lookup(@counter + 3), input)
       return 2
 
       # OUTPUT: 4, *ADDR
     when 4
-      write_output(lookup(modes[0], @program[@counter + 1]))
+      write_output(@memory.lookup(@counter + 1, modes[0]))
       return 2
 
       # JUMP-IF-TRUE: 5, *BOOL, *INST_PTR
     when 5
-      if lookup(modes[0], @program[@counter + 1]) != 0
-        @counter = lookup(modes[1], @program[@counter + 2])
+      if @memory.lookup(counter + 1,modes[0]) != 0
+        @counter = @memory.lookup(@counter + 2, modes[1])
         return 0
       else
         return 3
@@ -144,8 +137,8 @@ class Machine
 
       # JUMP-IF-FALSE: 6, *BOOL, *INST_PTR
     when 6
-      if lookup(modes[0], @program[@counter + 1]).zero?
-        @counter = lookup(modes[1], @program[@counter + 2])
+      if @memory.lookup(counter + 1,modes[0]) == 0
+        @counter = @memory.lookup(@counter + 2, modes[1])
         return 0
       else
         return 3
@@ -154,20 +147,20 @@ class Machine
       # LESS-THAN: 7, *X, *Y, *(X<Y?1:0)
     when 7
       halt if modes[2] != 0
-      value = lookup(modes[0], @program[@counter + 1]) < lookup(modes[1], @program[@counter + 2]) ? 1 : 0
-      @program[@program[@counter + 3]] = value
+      value = @memory.lookup(@counter + 1, modes[0]) < @memory.lookup(@counter + 2, modes[1]) ? 1 : 0
+      @memory.write(@counter + 3, value)
       return 4
 
       # EQUALS: 8, *X, *Y, *(X=Y?1:0)
     when 8
       halt if modes[2] != 0
-      value = lookup(modes[0], @program[@counter + 1]) == lookup(modes[1], @program[@counter + 2]) ? 1 : 0
-      @program[@program[@counter + 3]] = value
+      value = @memory.lookup(@counter + 1, modes[0]) == @memory.lookup(@counter + 2, modes[1]) ? 1 : 0
+      @memory.write(@counter + 3, value)
       return 4
 
       # UPDATE OFFSET: 9 *OFFSET
     when 9
-      @offset = lookup(modes[0], @program[@counter+1])
+      @memory.offset = @memory.lookup(@counter+1, modes[0])
       return 2
 
       # HALT: 99
