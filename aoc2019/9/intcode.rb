@@ -103,8 +103,6 @@ class Machine
   # TODO: validate each instruction before execution
   def process_op
     (opcode, modes) = peek_op
-    puts "op: #{opcode}, modes: #{modes.to_s}"
-    puts "prg: #{@program.to_s}"
     case opcode
 
     # ADD: 1, *X, *Y, *(X+Y)
