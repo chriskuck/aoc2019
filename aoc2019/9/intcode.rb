@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class Program
+class Machine
 
   def initialize(program_text_in)
     @program = program_text_in.split(',').map(&:to_i)

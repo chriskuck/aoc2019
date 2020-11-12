@@ -4,7 +4,7 @@ require './intcode'
 RSpec.describe 'intcode' do
 
   let(:program_text) { "" }
-  let(:program) { Program.new(program_text) }
+  let(:program) { Machine.new(program_text) }
   let(:input) { StringIO.new }
   let(:output) { StringIO.new }
 
