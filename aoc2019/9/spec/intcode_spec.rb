@@ -1,5 +1,5 @@
 require './spec/spec_helper'
-require './intcode'
+require './intcode/machine'
 
 RSpec.describe 'intcode' do
 
@@ -15,7 +15,7 @@ RSpec.describe 'intcode' do
       let(:program_text) { "109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99" }
       it 'produces a quine' do
         subject
-        expect(output.string.sub!(/\s/,"")).to equal(program_text)
+        expect(output.string.sub(/\s/,"")).to eq program_text+","
       end
     end
 
@@ -23,7 +23,7 @@ RSpec.describe 'intcode' do
       let(:program_text) { "1102,34915192,34915192,7,4,7,99,0" }
       it 'should output a 16 digit number' do
         subject
-        expect(output.string.sub!(/\s/,"").length).to be 16
+        expect(output.string.sub(/\s/,"").length).to be 17
       end
     end
 
@@ -31,7 +31,7 @@ RSpec.describe 'intcode' do
       let (:program_text) { "104,1125899906842624,99" }
       it 'should be equal to the middle integer' do
         subject
-        expect(output.string.sub!(/\s/,"")).to be "1125899906842624"
+        expect(output.string.sub(/\s/,"")).to eq "1125899906842624,"
       end
     end
 
@@ -40,7 +40,7 @@ RSpec.describe 'intcode' do
 
       it 'should put 2, in program[0]' do
         subject
-        expect(program.program_text[0..1]).to eq "2,"
+        expect(program.program_text).to eq "2,0,0,0,99"
       end
     end
 
@@ -95,7 +95,7 @@ RSpec.describe 'intcode' do
         let(:input) { StringIO.new("3") }
         it 'writes a 0' do
           subject
-          expect(output.string).to eq "0,"
+          expect(output.string.sub(/\s/,"")).to eq "0,"
         end
       end
 
